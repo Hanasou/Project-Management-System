@@ -1,13 +1,14 @@
 import React from 'react';
 import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 import Wrapper from './hoc/Wrapper'
-import Auth from './containers/Auth/Auth'
+import Signup from './containers/Auth/Signup'
 function App() {
   
   return (
     <Wrapper>
-      <Auth></Auth>
+      <Signup/>
     </Wrapper>
   );
 }

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/projmanserver/middleware"
-	"github.com/projmanserver/middleware/authentication"
+	"github.com/projmanserver/middleware/auth"
 )
 
 // NewRouter creates a router
@@ -13,8 +13,8 @@ func NewRouter() *http.ServeMux {
 
 	mux.HandleFunc("/test", middleware.TestFunc)
 	mux.HandleFunc("/test/readReq", middleware.ReadRequest)
-	mux.HandleFunc("/auth/signup", authentication.CreateUser)
-	mux.HandleFunc("/auth/login", authentication.Login)
-	mux.HandleFunc("/auth/verifyJWT", authentication.JwtVerify)
+	mux.Handle("/test/authReq", auth.JwtVerify(middleware.AuthRequest))
+	mux.HandleFunc("/auth/signup", auth.CreateUser)
+	mux.HandleFunc("/auth/login", auth.Login)
 	return mux
 }
