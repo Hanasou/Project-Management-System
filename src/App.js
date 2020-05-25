@@ -1,16 +1,67 @@
-import React from 'react';
+import React, { Component } from 'react';
+import { Route, Switch, withRouter, Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import Wrapper from './hoc/Wrapper'
-import Signup from './containers/Auth/Signup'
-function App() {
+import Wrapper from './hoc/Wrapper';
+import Signup from './containers/Auth/Signup';
+import CustomNavbar from './containers/Navbar/Navbar';
+import Projects from './containers/Projects/Projects';
+import * as actions from './store/actions/index';
+
+class App extends Component {
   
-  return (
-    <Wrapper>
-      <Signup/>
-    </Wrapper>
-  );
+  componentDidMount () {
+    this.props.onTryAutoLogin();
+  }
+
+  render() {
+
+    // Put routes in here later
+
+    // Change content based on whether user is authenticated or not.
+    let content = (
+      <Wrapper>
+        <CustomNavbar type="auth"/>
+        <Signup/>
+      </Wrapper>
+    );
+
+    if (this.props.isAuthenticated) {
+      let routes = (
+        <Switch>
+          <Route path="/projects" component={Projects} />
+          <Redirect to="/" />
+        </Switch>
+      )
+      content = (
+        <Wrapper>
+          <CustomNavbar />
+          { routes }
+        </Wrapper>
+      );
+    }
+
+    return (
+      <Wrapper>
+        {content}
+      </Wrapper>
+    );
+
+  }
 }
 
-export default App;
+const mapStateToProps = state => {
+  return {
+    isAuthenticated: state.auth.token !== null
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onTryAutoLogin: () => dispatch( actions.authCheckState() )
+  };
+};
+
+export default withRouter( connect(mapStateToProps, mapDispatchToProps) (App) );

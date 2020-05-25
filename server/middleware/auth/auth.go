@@ -3,13 +3,13 @@ package auth
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/golang/gddo/httputil/header"
 	"github.com/projmanserver/models"
 	"golang.org/x/crypto/bcrypt"
 
@@ -32,18 +32,23 @@ var sess = session.Must(session.NewSessionWithOptions(session.Options{
 // Create DynamoDB client
 var dbClient = dynamodb.New(sess)
 
-// CreateUser will put a user into the database. Called when user signs up.
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+// TestPost is a dummy post request
+func TestPost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	tableName := "Users"
+	log.Println("starting test post request")
+
 	// Create user struct and decode request into it
 	user := models.User{}
 	json.NewDecoder(r.Body).Decode(&user)
+	userEmail := user.Email
+	log.Println("User Email: " + userEmail)
 
 	// Check if email exists in the database
-	userEmail := user.Email
-	result, err := dbClient.GetItem(&dynamodb.GetItemInput{
+	tableName := "Users"
+	result, _ := dbClient.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Email": {
@@ -51,18 +56,20 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	})
-	if result != nil {
-		log.Println("User already exists")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Email already exists"))
+	log.Println(result)
+	if result.Item != nil {
+		msg := "User already exists"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	// Generate Hash
 	pass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println("Error in hashing")
-		w.WriteHeader(http.StatusInternalServerError)
+		msg := "Error in hashing"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	// User password is now hashed
@@ -72,9 +79,9 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Marshal the user into an item that can be stored into DynamoDB
 	uv, err := dynamodbattribute.MarshalMap(user)
 	if err != nil {
-		log.Println("Got error marshalling new user:")
-		log.Println(err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		msg := "Could not unmarshal"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -85,33 +92,36 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Put item into table
-	_, err = dbClient.PutItem(input)
-	if err != nil {
-		fmt.Println("Got error calling PutItem:")
-		fmt.Println(err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
+	dbClient.PutItem(input)
+
 	json.NewEncoder(w).Encode(user)
 }
 
-// Login logs user in
-func Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	// Unmarshal the request body into user struct
-	user := models.User{}
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
-		log.Println("Could not decode user")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+// CreateUser will put a user into the database. Called when user signs up.
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Header.Get("Content-Type") != "" {
+		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
+		if value != "application/json" {
+			msg := "Content-Type header is not application/json"
+			log.Println(msg)
+			http.Error(w, msg, http.StatusUnsupportedMediaType)
+			return
+		}
 	}
 
-	// Get item from table
-	tableName := "Users"
+	// Create user struct and decode request into it
+	user := models.User{}
+	json.NewDecoder(r.Body).Decode(&user)
 	userEmail := user.Email
-	result, err := dbClient.GetItem(&dynamodb.GetItemInput{
+	log.Println("User object: " + user.Email)
+
+	// Check if email exists in the database
+	tableName := "Users"
+	result, _ := dbClient.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Email": {
@@ -119,17 +129,73 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	})
-	if err != nil {
-		log.Println(err.Error())
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("User does not exist"))
+	log.Println(result)
+	if result.Item != nil {
+		msg := "User already exists"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
+
+	// Generate Hash
+	pass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		msg := "Error in hashing"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// User password is now hashed
+	user.Password = string(pass)
+	log.Println(user)
+
+	// Marshal the user into an item that can be stored into DynamoDB
+	uv, err := dynamodbattribute.MarshalMap(user)
+	if err != nil {
+		msg := "Could not unmarshal"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	// Use put parameters in a way the DynamoDB sdk understands
+	input := &dynamodb.PutItemInput{
+		Item:      uv,
+		TableName: aws.String(tableName),
+	}
+
+	// Put item into table
+	dbClient.PutItem(input)
+
+	json.NewEncoder(w).Encode(user)
+}
+
+// Login logs user in
+func Login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Unmarshal the request body into user struct
+	user := models.User{}
+	json.NewDecoder(r.Body).Decode(&user)
+
+	// Get item from table
+	tableName := "Users"
+	userEmail := user.Email
+	result, _ := dbClient.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Email": {
+				S: aws.String(userEmail),
+			},
+		},
+	})
 
 	// uv is the item from the database that corresponds to the user input
 	// Unmarshal the result into uv
 	uv := models.User{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, &uv)
+	err := dynamodbattribute.UnmarshalMap(result.Item, &uv)
 	if err != nil {
 		log.Println("Could not unmarshal record")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -180,6 +246,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	resp["token"] = tokenString
 	resp["refreshToken"] = rtString
 	resp["userEmail"] = user.Email
+	resp["expiresIn"] = tkExpiresAt
 	json.NewEncoder(w).Encode(resp)
 }
 
