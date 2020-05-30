@@ -23,7 +23,7 @@ func NewRouter() *mux.Router {
 	router.HandleFunc("/auth/login", auth.Login)
 
 	// Project apis
-	router.HandleFunc("/projects/add", projects.AddProject).Methods("POST", "OPTIONS")
-	router.HandleFunc("/projects/getAll/{email}", projects.AddProject).Methods("GET", "OPTIONS")
+	router.HandleFunc("/projects/add/{email}", projects.AddProject).Methods("POST", "OPTIONS")
+	router.HandleFunc("/projects/getAll/{email}", projects.GetProjects).Methods("GET", "OPTIONS")
 	return router
 }

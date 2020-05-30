@@ -27,8 +27,9 @@ func TestPathParams(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Getting path parameter")
 	params := mux.Vars(r)
-	log.Println(params)
-	json.NewEncoder(w).Encode(params)
+	id := params["id"]
+	log.Println(id)
+	json.NewEncoder(w).Encode(id)
 }
 
 // TestPost is a dummy post request

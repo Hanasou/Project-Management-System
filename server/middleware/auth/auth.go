@@ -10,6 +10,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/golang/gddo/httputil/header"
+	"github.com/google/uuid"
 	"github.com/projmanserver/models"
 	"golang.org/x/crypto/bcrypt"
 
@@ -32,71 +33,6 @@ var sess = session.Must(session.NewSessionWithOptions(session.Options{
 // Create DynamoDB client
 var dbClient = dynamodb.New(sess)
 
-// TestPost is a dummy post request
-func TestPost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	log.Println("starting test post request")
-
-	// Create user struct and decode request into it
-	user := models.User{}
-	json.NewDecoder(r.Body).Decode(&user)
-	userEmail := user.Email
-	log.Println("User Email: " + userEmail)
-
-	// Check if email exists in the database
-	tableName := "Users"
-	result, _ := dbClient.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"Email": {
-				S: aws.String(userEmail),
-			},
-		},
-	})
-	log.Println(result)
-	if result.Item != nil {
-		msg := "User already exists"
-		log.Println(msg)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-
-	// Generate Hash
-	pass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		msg := "Error in hashing"
-		log.Println(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-	// User password is now hashed
-	user.Password = string(pass)
-	log.Println(user)
-
-	// Marshal the user into an item that can be stored into DynamoDB
-	uv, err := dynamodbattribute.MarshalMap(user)
-	if err != nil {
-		msg := "Could not unmarshal"
-		log.Println(msg)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-
-	// Use put parameters in a way the DynamoDB sdk understands
-	input := &dynamodb.PutItemInput{
-		Item:      uv,
-		TableName: aws.String(tableName),
-	}
-
-	// Put item into table
-	dbClient.PutItem(input)
-
-	json.NewEncoder(w).Encode(user)
-}
-
 // CreateUser will put a user into the database. Called when user signs up.
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -116,26 +52,10 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Create user struct and decode request into it
 	user := models.User{}
 	json.NewDecoder(r.Body).Decode(&user)
-	userEmail := user.Email
-	log.Println("User object: " + user.Email)
 
-	// Check if email exists in the database
+	userID := uuid.New().String()
+	user.UserID = userID
 	tableName := "Users"
-	result, _ := dbClient.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"Email": {
-				S: aws.String(userEmail),
-			},
-		},
-	})
-	log.Println(result)
-	if result.Item != nil {
-		msg := "User already exists"
-		log.Println(msg)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
 
 	// Generate Hash
 	pass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -166,6 +86,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Put item into table
 	dbClient.PutItem(input)
+	log.Println("Put Successful")
 
 	json.NewEncoder(w).Encode(user)
 }
@@ -182,27 +103,29 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	// Get item from table
 	tableName := "Users"
+	indexName := "Email-index"
 	userEmail := user.Email
-	result, _ := dbClient.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"Email": {
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String(tableName),
+		IndexName:              aws.String(indexName),
+		KeyConditionExpression: aws.String("#em = :email"),
+		ExpressionAttributeNames: map[string]*string{
+			"#em": aws.String("Email"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":email": {
 				S: aws.String(userEmail),
 			},
 		},
-	})
-
-	// uv is the item from the database that corresponds to the user input
-	// Unmarshal the result into uv
-	uv := models.User{}
-	err := dynamodbattribute.UnmarshalMap(result.Item, &uv)
-	if err != nil {
-		log.Println("Could not unmarshal record")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
+	queryResult, _ := dbClient.Query(queryInput)
+	userList := []models.User{}
+	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &userList)
+	userResult := userList[0]
+	log.Println("User Retrieved: ", userResult)
+
 	// Compare password inside request to password inside database
-	errf := bcrypt.CompareHashAndPassword([]byte(uv.Password), []byte(user.Password))
+	errf := bcrypt.CompareHashAndPassword([]byte(userResult.Password), []byte(user.Password))
 	if errf != nil && errf == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Invalid Password"))
@@ -213,13 +136,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	tkExpiresAt := time.Now().Add(time.Minute * 100000).Unix()
 	rtExpiresAt := time.Now().Add(time.Hour * 24).Unix()
 	tk := &models.Token{
-		Email: uv.Email,
+		Email: userResult.Email,
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: tkExpiresAt,
 		},
 	}
 	rt := &models.Token{
-		Email: uv.Email,
+		Email: userResult.Email,
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: rtExpiresAt,
 		},
@@ -253,15 +176,19 @@ func Login(w http.ResponseWriter, r *http.Request) {
 // JwtVerify is middleware that verifies if client is authenticated or not
 func JwtVerify(next http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var header = r.Header.Get("x-access-token") //Grab the token from the header
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		var header = r.Header.Get("Authorization") //Grab the token from the header
 
 		header = strings.TrimSpace(header)
 
 		if header == "" {
 			//Token is missing, returns with error code 403 Unauthorized
-			log.Println("Missing token header")
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(models.Exception{Message: "Not Authorized"})
+			msg := "Missing token header"
+			log.Println(msg)
+			http.Error(w, msg, http.StatusForbidden)
 			return
 		}
 		tk := &models.Token{}
@@ -271,8 +198,9 @@ func JwtVerify(next http.HandlerFunc) http.Handler {
 		})
 
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(models.Exception{Message: err.Error()})
+			msg := "Could not parse token"
+			log.Println(msg)
+			http.Error(w, msg, http.StatusForbidden)
 			return
 		}
 
