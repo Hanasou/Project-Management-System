@@ -1,6 +1,7 @@
-.Dashboard {
+.Issues {
     width: 200px;
     display: inline-block;
     float: left;
-    margin-right: 100px;
+    margin-right: 50px;
+    overflow-y: auto;
 }

@@ -22,7 +22,7 @@ export const getProjects = ( token, email ) => {
         }
         axios.get('/projects/getAll/' + email, {headers})
             .then(response => {
-                console.log(response)
+                console.log(response.data)
                 const fetchedProjects = [];
                 for (let key in response.data) {
                     fetchedProjects.push({
@@ -35,6 +35,28 @@ export const getProjects = ( token, email ) => {
             .catch(error => {
                 dispatch(getProjectsFail(error));
             })
+    }
+}
+
+export const getProjectSuccess = ( project ) => {
+    return {
+        type: actionTypes.GET_PROJECT_SUCCESS,
+        project: project
+    }
+}
+
+export const getProject = ( token, projectID) => {
+    return dispatch => {
+        const headers = {
+            'Authorization': token
+        }
+        axios.get('/projects/get/' + projectID, {headers})
+            .then(response => {
+                console.log(response.data);
+                const project = response.data;
+                dispatch(getProjectSuccess(project));
+            })
+            .catch()
     }
 }
 
@@ -61,11 +83,10 @@ export const addProject = ( token, email, title, description) => {
             Title: title,
             Description: description
         };
-        console.log(projectData)
         axios.post('/projects/add/' + email, projectData, {headers})
             .then(response => {
-                console.log(response.data);
-                dispatch(addProjectSuccess(projectData));
+                console.log("Added Project:", response.data);
+                dispatch(addProjectSuccess(response.data));
             })
             .catch( error => {
                 dispatch(addProjectFail(error))

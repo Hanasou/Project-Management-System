@@ -8,5 +8,12 @@ export {
 
 export {
     getProjects,
+    getProject,
     addProject
 } from './projects';
+
+export {
+    getIssues,
+    getIssue,
+    addIssue
+} from './issues';

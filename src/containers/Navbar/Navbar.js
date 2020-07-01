@@ -69,6 +69,7 @@ class CustomNavbar extends Component {
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="mr-auto">
                         <Nav.Link href="/projects">Projects</Nav.Link>
+                        <Nav.Link href="/teams">Teams</Nav.Link>
                         </Nav>
                     </Navbar.Collapse>
                     <Button btnType="success" clicked={this.logoutHandler}>Sign Out</Button>

@@ -28,7 +28,7 @@ class CustomModal extends Component {
         });
     }
 
-    submitHandler = (event) => {
+    submitProjectHandler = (event) => {
         event.preventDefault()
         console.log("Project Submit Called");
         this.props.onAddProject(this.props.token, this.props.email, 
@@ -60,9 +60,9 @@ class CustomModal extends Component {
                 <Wrapper>
                     <Modal show={this.props.show} onHide={this.props.onHide}>
                         <Modal.Header closeButton>
-                        <Modal.Title>New Project</Modal.Title>
+                            <Modal.Title>New Project</Modal.Title>
                         </Modal.Header>
-                        <Form onSubmit={this.submitHandler}>
+                        <Form onSubmit={this.submitProjectHandler}>
                             <Modal.Body>
                                     <Form.Group controlId="formProjectTitle">
                                         <Form.Label>Project Title</Form.Label>
@@ -95,6 +95,7 @@ class CustomModal extends Component {
                 </Wrapper>
             )
         }
+
         return(
             <Wrapper>
                 {content}

@@ -6,7 +6,6 @@ import Button from '../../components/UI/Button/Button';
 import CustomModal from '../../components/UI/Modal/CustomModal';
 import Wrapper from '../../hoc/Wrapper';
 import classes from './Projects.module.css';
-import Dashboard from '../../components/Dashboard/Dashboard';
 import * as actions from '../../store/actions/index';
 
 class Projects extends Component {
@@ -30,13 +29,15 @@ class Projects extends Component {
     render() {
         let projects = this.props.projects.map( project => (
             <Card
-                key={project.Id} 
+                key={project.ProjectID}
+                cardType="Project" 
                 title={project.Title}
-                desc={project.Description}/>
+                desc={project.Description}
+                id={project.ProjectID}
+                path={this.props.match.path}/>
         ))
         return(
             <Wrapper>
-                <Dashboard />
                 <div className={classes.Projects}>
                     {projects}
                     <Button 
@@ -49,6 +50,7 @@ class Projects extends Component {
                     show={this.state.show}
                     onHide={this.handleClose}
                     handleClose={this.handleClose}/>
+                
             </Wrapper>
         );
     };

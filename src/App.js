@@ -8,6 +8,8 @@ import Wrapper from './hoc/Wrapper';
 import Signup from './containers/Auth/Signup';
 import CustomNavbar from './containers/Navbar/Navbar';
 import Projects from './containers/Projects/Projects';
+import Project from './containers/Projects/Project/Project';
+import Teams from './containers/Teams/Teams';
 import * as actions from './store/actions/index';
 
 class App extends Component {
@@ -31,7 +33,9 @@ class App extends Component {
     if (this.props.isAuthenticated) {
       let routes = (
         <Switch>
-          <Route path="/projects" component={Projects} />
+          <Route exact path="/projects" component={Projects} />
+          <Route exact path="/teams" component={Teams} />
+          <Route path={"/projects/:projectID"} component={Project} />
           <Redirect to="/" />
         </Switch>
       )
