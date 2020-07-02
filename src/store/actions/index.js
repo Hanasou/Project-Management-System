@@ -17,3 +17,8 @@ export {
     getIssue,
     addIssue
 } from './issues';
+
+export {
+    getTeams,
+    addTeam
+} from './teams';

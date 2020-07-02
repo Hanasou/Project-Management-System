@@ -14,7 +14,8 @@ class CustomModal extends Component {
     state = {
         controls: {
             title: "",
-            description: ""
+            description: "",
+            members: ""
         }
     }
 
@@ -34,6 +35,20 @@ class CustomModal extends Component {
         this.props.onAddProject(this.props.token, this.props.email, 
             this.state.controls.title, this.state.controls.description);
         this.props.handleClose();
+    }
+
+    submitTeamMembersHandler = (event) => {
+        event.preventDefault()
+        console.log("Submit team members called")
+        
+        const membersArray = this.state.controls.members.split(" ")
+        const requestData = {
+            ProjectID: this.props.projectID,
+            Members: membersArray,
+            Project: this.props.projectName
+        }
+        this.props.onAddTeamMembers(this.props.token, requestData)
+        this.props.handleClose()
     }
 
     render() {
@@ -83,12 +98,42 @@ class CustomModal extends Component {
                                     </Form.Group>
                             </Modal.Body>
                             <Modal.Footer>
-                            <Button btnType="secondary" clicked={this.props.handleClose}>
-                                Close
-                            </Button>
-                            <Button btnType="primary" type="submit">
-                                Submit
-                            </Button>
+                                <Button btnType="secondary" clicked={this.props.handleClose}>
+                                    Close
+                                </Button>
+                                <Button btnType="primary" type="submit">
+                                    Submit
+                                </Button>
+                            </Modal.Footer>
+                        </Form>
+                    </Modal>
+                </Wrapper>
+            )
+        }
+        else if (this.props.type === 'addTeamMembers') {
+            content = (
+                <Wrapper>
+                    <Modal show={this.props.show} onHide={this.props.onHide}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>{this.props.projectName}</Modal.Title>
+                        </Modal.Header>
+                        <Form onSubmit={this.submitTeamMembersHandler}>
+                            <Modal.Body>
+                                <Form.Group controlId="formMembers">
+                                    <Form.Label>Add Members</Form.Label>
+                                    <Input 
+                                        inputType="text" 
+                                        inputPlaceholder="Add Members"
+                                        changed={(event) => this.inputChangedHandler(event, "members")}/>
+                                </Form.Group>
+                            </Modal.Body>
+                            <Modal.Footer>
+                                <Button btnType="secondary" clicked={this.props.handleClose}>
+                                    Close
+                                </Button>
+                                <Button btnType="primary" type="submit">
+                                    Submit
+                                </Button>
                             </Modal.Footer>
                         </Form>
                     </Modal>
@@ -114,7 +159,8 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
     return {
         onAddProject: (token, email, title, description) => 
-            dispatch(actions.addProject(token, email, title, description))
+            dispatch(actions.addProject(token, email, title, description)),
+        onAddTeamMembers: (token, teamData) => dispatch(actions.addTeam(token, teamData))
     }
 }
 

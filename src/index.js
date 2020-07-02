@@ -12,13 +12,15 @@ import * as serviceWorker from './serviceWorker';
 import authReducer from './store/reducers/auth';
 import projectsReducer from './store/reducers/projects';
 import issuesReducer from './store/reducers/issues';
+import teamsReducer from './store/reducers/teams';
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
 const rootReducer = combineReducers({
   auth: authReducer,
   projects: projectsReducer,
-  issues: issuesReducer
+  issues: issuesReducer,
+  teams: teamsReducer
 });
 
 const store = createStore(rootReducer, composeEnhancers(
