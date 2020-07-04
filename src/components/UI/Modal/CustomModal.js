@@ -45,7 +45,8 @@ class CustomModal extends Component {
         const requestData = {
             ProjectID: this.props.projectID,
             Members: membersArray,
-            Project: this.props.projectName
+            ProjectName: this.props.projectName,
+            ProjectDesc: this.props.projectDesc
         }
         this.props.onAddTeamMembers(this.props.token, requestData)
         this.props.handleClose()

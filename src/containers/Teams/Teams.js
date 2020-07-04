@@ -18,11 +18,12 @@ class Teams extends Component {
         this.props.onGetTeams(this.props.token, this.props.email)
     }
 
-    handleShow = (projectID, projectName) => {
+    handleShow = (projectID, projectName, projectDesc) => {
         this.setState({
             show: true, 
             selectedProject: projectID,
-            selectedProjectName: projectName
+            selectedProjectName: projectName,
+            selectedProjectDesc: projectDesc
         });
     }
 
@@ -30,7 +31,8 @@ class Teams extends Component {
         this.setState({
             show: false, 
             selectedProject: "",
-            selectedProjectName: ""
+            selectedProjectName: "",
+            selectedProjectDesc: ""
         });
     }
 
@@ -43,8 +45,8 @@ class Teams extends Component {
                 id={team.ProjectID}
                 path={this.props.match.path}
                 members={team.Members}
-                clicked={(projectID, projectName) => 
-                    this.handleShow(team.ProjectID, team.Project)}/>
+                clicked={(projectID, projectName, projectDesc) => 
+                    this.handleShow(team.ProjectID, team.Project, team.ProjectDesc)}/>
         ))
         return(
             <Wrapper>
@@ -55,6 +57,7 @@ class Teams extends Component {
                     show={this.state.show}
                     projectID={this.state.selectedProject}
                     projectName={this.state.selectedProjectName}
+                    projectDesc={this.state.selectedProjectDesc}
                     onHide={this.handleClose}
                     handleClose={this.handleClose}/>
             </Wrapper>

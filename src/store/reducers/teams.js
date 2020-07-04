@@ -12,8 +12,16 @@ const getTeamsSuccess = ( state, action ) => {
 }
 
 const addTeamSuccess = (state, action) => {
+    let currTeams = [...state.teams]
+    const projectID = action.teamData.ProjectID
+    for (let i in currTeams) {
+        const currTeam = currTeams[i]
+        if (currTeam.ProjectID === projectID) {
+            currTeam.Members.push(action.teamData.Members[0])
+        }
+    }
     return updateObject( state, {
-        teams: [...state.teams, action.teamData]
+        teams: currTeams
     })
 }
 

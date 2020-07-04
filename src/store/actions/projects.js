@@ -45,12 +45,12 @@ export const getProjectSuccess = ( project ) => {
     }
 }
 
-export const getProject = ( token, projectID) => {
+export const getProject = ( token, projectID, userEmail) => {
     return dispatch => {
         const headers = {
             'Authorization': token
         }
-        axios.get('/projects/get/' + projectID, {headers})
+        axios.get('/projects/get/' + projectID + '/' + userEmail, {headers})
             .then(response => {
                 console.log(response.data);
                 const project = response.data;
