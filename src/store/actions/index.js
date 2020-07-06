@@ -22,3 +22,8 @@ export {
     getTeams,
     addTeam
 } from './teams';
+
+export {
+    getComments,
+    addComment
+} from './comments'

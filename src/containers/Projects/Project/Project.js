@@ -2,7 +2,6 @@ import React, {Component} from 'react';
 import { connect } from 'react-redux';
 
 import Wrapper from '../../../hoc/Wrapper';
-import Button from '../../../components/UI/Button/Button';
 import CustomModal from '../../../components/UI/Modal/CustomModal';
 import Issues from '../../../components/Issues/Issues';
 import Issue from '../../../components/Issues/Issue/Issue';
@@ -36,11 +35,6 @@ class Project extends Component {
                 <h1>
                     {this.props.project.Title}
                 </h1>
-                <Button 
-                    btnType='primary'
-                    clicked={this.handleShow}>
-                    Add Team Members
-                </Button>
                 <Issues 
                     issues={this.props.issues}/> 
                 <Issue />
