@@ -38,16 +38,16 @@ export const getComments = (token, issueID) => {
     }
 }
 
-export const addCommentSuccess = ( issueData ) => {
+export const addCommentSuccess = ( commentData ) => {
     return {
-        type: actionTypes.ADD_ISSUE_SUCCESS,
-        issueData: issueData
+        type: actionTypes.ADD_COMMENT_SUCCESS,
+        issueData: commentData
     }
 }
 
 export const addCommentFail = ( error ) => {
     return {
-        type: actionTypes.ADD_ISSUE_FAIL,
+        type: actionTypes.ADD_COMMENT_FAIL,
         error: error
     }
 }
@@ -59,7 +59,7 @@ export const addComment = (token, commentData) => {
         }
         axios.post('/issues/add', commentData, {headers})
             .then(response => {
-                console.log("Added Issue: ", response.data);
+                console.log("Added Comment: ", response.data);
                 dispatch(addCommentSuccess(response.data));
             })
             .catch(error => {

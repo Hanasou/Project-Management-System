@@ -20,7 +20,7 @@ const addCommentSuccess = (state, action) => {
 const reducer = (state = initialState, action) => {
     switch (action.type) {
         case actionTypes.GET_ISSUES_SUCCESS: return getCommentsSuccess(state, action);
-        case actionTypes.ADD_ISSUE_SUCCESS: return addCommentSuccess(state, action);
+        case actionTypes.ADD_COMMENT_SUCCESS: return addCommentSuccess(state, action);
         default:
             return state;
     }

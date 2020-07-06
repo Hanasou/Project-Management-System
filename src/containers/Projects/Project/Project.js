@@ -2,7 +2,6 @@ import React, {Component} from 'react';
 import { connect } from 'react-redux';
 
 import Wrapper from '../../../hoc/Wrapper';
-import CustomModal from '../../../components/UI/Modal/CustomModal';
 import Issues from '../../../components/Issues/Issues';
 import Issue from '../../../components/Issues/Issue/Issue';
 import * as actions from '../../../store/actions/index';
@@ -30,6 +29,10 @@ class Project extends Component {
 
     
     render() {
+        let issue = null;
+        if (this.props.issue.IssueID !== "") {
+            issue = <Issue/>
+        }
         return (
             <Wrapper>
                 <h1>
@@ -37,14 +40,7 @@ class Project extends Component {
                 </h1>
                 <Issues 
                     issues={this.props.issues}/> 
-                <Issue />
-                <CustomModal
-                    type="addTeamMembers" 
-                    show={this.state.show}
-                    projectID={this.props.project.ProjectID}
-                    projectName={this.props.project.Title}
-                    onHide={this.handleClose}
-                    handleClose={this.handleClose}/>
+                {issue}
             </Wrapper>
         )
     }

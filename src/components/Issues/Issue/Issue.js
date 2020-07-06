@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 
 import classes from './Issue.module.css';
 import Wrapper from '../../../hoc/Wrapper';
+import Comments from '../../Comments/Comments';
 import Dropdown from '../../UI/Dropdown/Dropdown';
 
 class Issue extends Component {
@@ -14,6 +15,7 @@ class Issue extends Component {
                     <h5>{this.props.issue.Type}</h5>
                     <h1>{this.props.issue.Title}</h1>
                     <p>{this.props.issue.Description}</p>
+                    <Comments/>
                 </div>
                 <div style={{
                     float:'right',

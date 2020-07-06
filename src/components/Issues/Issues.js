@@ -41,7 +41,7 @@ class Issues extends Component {
             <Wrapper>
                 <div className={classes.Issues}> 
                     <h2>Issues</h2>
-                    <ListGroup>
+                    <ListGroup className={classes.IssuesList}>
                         {issues}
                     </ListGroup>
                     <div style={{

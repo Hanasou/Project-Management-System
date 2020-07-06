@@ -94,6 +94,7 @@ export const addIssue = (token, issueData) => {
                 dispatch(addIssueSuccess(response.data));
             })
             .catch(error => {
+                console.log(error)
                 dispatch(addIssueFail(error));
             })
     }
