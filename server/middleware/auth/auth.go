@@ -101,31 +101,26 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	user := models.User{}
 	json.NewDecoder(r.Body).Decode(&user)
 
+	log.Println("User login: ", user)
+
 	// Get item from table
 	tableName := "Users"
-	indexName := "Email-index"
 	userEmail := user.Email
-	queryInput := &dynamodb.QueryInput{
-		TableName:              aws.String(tableName),
-		IndexName:              aws.String(indexName),
-		KeyConditionExpression: aws.String("#em = :email"),
-		ExpressionAttributeNames: map[string]*string{
-			"#em": aws.String("Email"),
-		},
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":email": {
+	getItemInput := &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Email": {
 				S: aws.String(userEmail),
 			},
 		},
 	}
-	queryResult, _ := dbClient.Query(queryInput)
-	userList := []models.User{}
-	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &userList)
-	userResult := userList[0]
-	log.Println("User Retrieved: ", userResult)
+	getResult, _ := dbClient.GetItem(getItemInput)
+	uv := models.User{}
+	dynamodbattribute.UnmarshalMap(getResult.Item, &uv)
+	log.Println("User Retrieved: ", uv)
 
 	// Compare password inside request to password inside database
-	errf := bcrypt.CompareHashAndPassword([]byte(userResult.Password), []byte(user.Password))
+	errf := bcrypt.CompareHashAndPassword([]byte(uv.Password), []byte(user.Password))
 	if errf != nil && errf == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Invalid Password"))
@@ -136,13 +131,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	tkExpiresAt := time.Now().Add(time.Minute * 100000).Unix()
 	rtExpiresAt := time.Now().Add(time.Hour * 24).Unix()
 	tk := &models.Token{
-		Email: userResult.Email,
+		Email: uv.Email,
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: tkExpiresAt,
 		},
 	}
 	rt := &models.Token{
-		Email: userResult.Email,
+		Email: uv.Email,
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: rtExpiresAt,
 		},

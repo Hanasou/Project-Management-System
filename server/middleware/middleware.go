@@ -6,6 +6,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/gorilla/mux"
 	"github.com/projmanserver/models"
 )
@@ -14,6 +18,16 @@ type body struct {
 	Key1 string
 	Key2 string
 }
+
+// Initialize a session that the SDK will use to load
+// credentials from the shared credentials file ~/.aws/credentials
+// and region from the shared configuration file ~/.aws/config.
+var sess = session.Must(session.NewSessionWithOptions(session.Options{
+	SharedConfigState: session.SharedConfigEnable,
+}))
+
+// Create DynamoDB client
+var dbClient = dynamodb.New(sess)
 
 // TestFunc test functionality of server
 func TestFunc(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +56,28 @@ func TestPost(w http.ResponseWriter, r *http.Request) {
 	user := models.User{}
 	json.NewDecoder(r.Body).Decode(&user)
 	log.Println(user)
-	json.NewEncoder(w).Encode(user)
+
+	tableName := "Users"
+	indexName := "Email-index"
+	userEmail := user.Email
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String(tableName),
+		IndexName:              aws.String(indexName),
+		KeyConditionExpression: aws.String("#em = :email"),
+		ExpressionAttributeNames: map[string]*string{
+			"#em": aws.String("Email"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":email": {
+				S: aws.String(userEmail),
+			},
+		},
+	}
+	queryResult, _ := dbClient.Query(queryInput)
+	userList := []models.User{}
+	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &userList)
+	log.Println("User Retrieved: ", userList)
+	json.NewEncoder(w).Encode(userList)
 }
 
 // ReadRequest func reads from request body

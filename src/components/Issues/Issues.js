@@ -17,6 +17,7 @@ class Issues extends Component {
     onIssueClicked = (event, issueID) => {
         event.preventDefault();
         this.props.onGetIssue(this.props.token,this.props.project.ProjectID,issueID);
+        this.props.onGetComments(this.props.token, issueID);
     }
 
     handleShow = () => {
@@ -67,13 +68,15 @@ const mapStateToProps = state => {
     return {
         token: state.auth.token,
         project: state.projects.project,
-        issue: state.issues.issue
+        issue: state.issues.issue,
+        comments: state.comments.comments
     };
 };
 
 const mapDispatchToProps = dispatch => {
     return {
-        onGetIssue: (token, projectID, issueID) => dispatch(actions.getIssue(token, projectID, issueID))
+        onGetIssue: (token, projectID, issueID) => dispatch(actions.getIssue(token, projectID, issueID)),
+        onGetComments: (token, issueID) => dispatch(actions.getComments(token, issueID))
     }
 }
 

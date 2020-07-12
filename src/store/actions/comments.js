@@ -41,7 +41,7 @@ export const getComments = (token, issueID) => {
 export const addCommentSuccess = ( commentData ) => {
     return {
         type: actionTypes.ADD_COMMENT_SUCCESS,
-        issueData: commentData
+        commentData: commentData
     }
 }
 
@@ -57,7 +57,7 @@ export const addComment = (token, commentData) => {
         const headers = {
             'Authorization': token
         }
-        axios.post('/issues/add', commentData, {headers})
+        axios.post('/comments/add', commentData, {headers})
             .then(response => {
                 console.log("Added Comment: ", response.data);
                 dispatch(addCommentSuccess(response.data));

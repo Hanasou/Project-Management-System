@@ -2,6 +2,7 @@ package projects
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -32,16 +33,38 @@ func AddProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
+	log.Println("Request Method", r.Method)
+	if r.Method != "POST" {
+		return
+	}
+
 	// Unmarshal request body into project object
 	project := models.Project{}
 	json.NewDecoder(r.Body).Decode(&project)
+
 	projectID := uuid.New().String()
 	project.ProjectID = projectID
 
 	log.Println("Project request", project)
+
 	// Email should be sent inside path parameter
 	userEmail := mux.Vars(r)["email"]
-	project.UserEmail = userEmail
+	project.Email = userEmail
+
+	// Add self to new team
+	type newTeam struct {
+		ProjectID   string
+		Project     string
+		ProjectDesc string
+		Member      string
+	}
+	insertTeam := newTeam{
+		ProjectID:   project.ProjectID,
+		Project:     project.Title,
+		ProjectDesc: project.Description,
+		Member:      project.Email,
+	}
+	addSelfToTeam(insertTeam)
 
 	pv, err := dynamodbattribute.MarshalMap(project)
 	if err != nil {
@@ -81,7 +104,7 @@ func GetProjects(w http.ResponseWriter, r *http.Request) {
 		IndexName:              aws.String(indexName),
 		KeyConditionExpression: aws.String("#em = :email"),
 		ExpressionAttributeNames: map[string]*string{
-			"#em": aws.String("UserEmail"),
+			"#em": aws.String("Email"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":email": {
@@ -91,10 +114,62 @@ func GetProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryResult, _ := dbClient.Query(queryInput)
-	var projects = []models.Project{}
+	projects := []models.Project{}
 
 	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &projects)
 
 	log.Println(projects)
 	json.NewEncoder(w).Encode(projects)
+}
+
+// GetProject gets a single project
+func GetProject(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	log.Println("Retrieving project")
+
+	// Project ID should be in path parameter
+	projectID := mux.Vars(r)["projectID"]
+	userEmail := mux.Vars(r)["userEmail"]
+	getItemInput := &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ProjectID": {
+				S: aws.String(projectID),
+			},
+			"Email": {
+				S: aws.String(userEmail),
+			},
+		},
+	}
+	project := models.Project{}
+	getResult, _ := dbClient.GetItem(getItemInput)
+	err := dynamodbattribute.UnmarshalMap(getResult.Item, &project)
+	if err != nil {
+		msg := "Could not unmarshal"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(project)
+}
+
+func addSelfToTeam(team interface{}) error {
+	tv, err := dynamodbattribute.MarshalMap(team)
+	if err != nil {
+		msg := "Could not unmarshal"
+		log.Println(msg)
+		return errors.New(msg)
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      tv,
+		TableName: aws.String("Teams"),
+	}
+
+	dbClient.PutItem(input)
+	return nil
 }
