@@ -32,6 +32,7 @@ func NewRouter() *mux.Router {
 
 	// Issue apis
 	router.HandleFunc("/issues/add", issues.CreateIssue).Methods("POST", "OPTIONS")
+	router.HandleFunc("/issues/update", issues.UpdateIssue).Methods("POST", "OPTIONS")
 	router.HandleFunc("/issues/getAll/{projectID}", issues.GetIssues).Methods("GET", "OPTIONS")
 	router.HandleFunc("/issues/get/{projectID}/{issueID}", issues.GetIssue).Methods("GET", "OPTIONS")
 

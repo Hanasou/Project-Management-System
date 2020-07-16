@@ -8,7 +8,10 @@ const input = (props) => {
             as={props.inputAs}
             rows={props.rows} 
             placeholder={props.inputPlaceholder} 
-            onChange={props.changed}/>
+            onChange={props.changed}
+            readOnly={props.readOnly}
+            plaintext={props.plaintext}
+            defaultValue={props.children}/>
     )
 }
 

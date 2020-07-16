@@ -8,7 +8,8 @@ const initialState = {
         Title: "",
         Description: "",
         Type: "",
-        Status: ""
+        Status: "",
+        Priority: ""
     }
 }
 
@@ -30,11 +31,33 @@ const addIssueSuccess = (state, action) => {
     })
 }
 
+const updateIssueSuccess = (state, action) => {
+    // Replace the issues array with the new issue
+    let oldIssueKey = "";
+    const newIssueKey = action.issueData.IssueID;
+    const issueArray = [...state.issues];
+
+    for (let i in issueArray) {
+        oldIssueKey = issueArray[i].IssueID;
+        if (oldIssueKey === newIssueKey) {
+            issueArray[i] = action.issueData;
+            break;
+        }
+    }
+
+    console.log("Updated Issues ", issueArray)
+    return updateObject(state, {
+        issue: action.issueData,
+        issues: issueArray
+    })
+}
+
 const reducer = (state = initialState, action) => {
     switch (action.type) {
         case actionTypes.GET_ISSUES_SUCCESS: return getIssuesSuccess(state, action);
         case actionTypes.GET_ISSUE_SUCCESS: return getIssueSuccess(state, action);
         case actionTypes.ADD_ISSUE_SUCCESS: return addIssueSuccess(state, action);
+        case actionTypes.UPDATE_ISSUE_SUCCESS: return updateIssueSuccess(state, action);
         default:
             return state;
     }

@@ -6,7 +6,10 @@ const dropdown = (props) => {
     let dropdownItems = props.items.map( item => (
         <Dropdown.Item 
             key={props.items.indexOf(item)}
-            eventKey={item}>{item}</Dropdown.Item>
+            eventKey={item}
+            onSelect={props.onItemClick}>
+                {item}
+        </Dropdown.Item>
     ))
     return(
         <DropdownButton

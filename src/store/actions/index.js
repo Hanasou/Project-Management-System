@@ -15,7 +15,8 @@ export {
 export {
     getIssues,
     getIssue,
-    addIssue
+    addIssue,
+    updateIssue
 } from './issues';
 
 export {

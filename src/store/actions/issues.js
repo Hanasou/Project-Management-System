@@ -99,3 +99,34 @@ export const addIssue = (token, issueData) => {
             })
     }
 }
+
+export const updateIssueSuccess = (issueData) => {
+    return {
+        type: actionTypes.UPDATE_ISSUE_SUCCESS,
+        issueData: issueData
+    }
+}
+
+export const updateIssueFail = (error) => {
+    return {
+        type: actionTypes.UPDATE_ISSUE_FAIL,
+        error: error
+    }
+}
+
+export const updateIssue = (token, updateData) => {
+    return dispatch => {
+        const headers = {
+            'Authorization': token
+        }
+        axios.post('/issues/update', updateData, {headers})
+            .then(response => {
+                console.log("Updated Data: ", response.data);
+                dispatch(updateIssueSuccess(response.data));
+            })
+            .catch(error => {
+                console.log(error);
+                dispatch(updateIssueFail(error));
+            })
+    }
+}
