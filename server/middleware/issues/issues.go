@@ -2,6 +2,7 @@ package issues
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"reflect"
@@ -144,7 +145,7 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "Could not get items"
 		log.Println(msg)
-		log.Println(err)
+		log.Println(err.Error())
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -287,6 +288,8 @@ func UpdateIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteIssue deletes an issue
+// This should delete an issue from the issue table and all its associated comments
+// Request should take in IssueID, ProjectID, and a CommentID array
 func DeleteIssue(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "DELETE")
@@ -298,4 +301,93 @@ func DeleteIssue(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "DELETE" {
 		return
 	}
+
+	type deleteResponse struct {
+		IssueID   string
+		ProjectID string
+	}
+
+	issueID := mux.Vars(r)["issueID"]
+	projectID := mux.Vars(r)["projectID"]
+	responseObject := deleteResponse{
+		IssueID:   issueID,
+		ProjectID: projectID,
+	}
+
+	err := RemoveIssue(responseObject.IssueID, responseObject.ProjectID)
+	if err != nil {
+		msg := "RemoveItem error"
+		log.Println(err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(&responseObject)
+}
+
+// RemoveIssue deletes an issue.
+func RemoveIssue(issueID, projectID string) error {
+
+	// Delete all the comments associated with the issue from the comments table
+	//Query for the comments associated with an issue
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String("Comments"),
+		KeyConditionExpression: aws.String("#iid = :iid"),
+		ExpressionAttributeNames: map[string]*string{
+			"#iid": aws.String("IssueID"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":iid": {
+				S: aws.String(issueID),
+			},
+		},
+	}
+	queryResult, _ := dbClient.Query(queryInput)
+	comments := []models.Comment{}
+
+	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &comments)
+
+	// Iterate over comments slice and delete them
+	for _, v := range comments {
+		deleteCommentInput := &dynamodb.DeleteItemInput{
+			Key: map[string]*dynamodb.AttributeValue{
+				"IssueID": {
+					S: aws.String(v.IssueID),
+				},
+				"CommentID": {
+					S: aws.String(v.CommentID),
+				},
+			},
+			TableName: aws.String("Comments"),
+		}
+		_, err := dbClient.DeleteItem(deleteCommentInput)
+		if err != nil {
+			msg := "Could not call DeleteItem on comment"
+			log.Println(msg)
+			log.Println(err)
+			return errors.New(msg)
+		}
+	}
+
+	// Delete item from issue table
+	deleteIssueInput := &dynamodb.DeleteItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"IssueID": {
+				S: aws.String(issueID),
+			},
+			"ProjectID": {
+				S: aws.String(projectID),
+			},
+		},
+		TableName: aws.String(tableName),
+	}
+
+	_, err := dbClient.DeleteItem(deleteIssueInput)
+	if err != nil {
+		msg := "Could not call DeleteItem on issue"
+		log.Println(msg)
+		log.Println(err)
+		return errors.New(msg)
+	}
+
+	return nil
 }

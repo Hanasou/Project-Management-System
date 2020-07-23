@@ -9,14 +9,16 @@ export {
 export {
     getProjects,
     getProject,
-    addProject
+    addProject,
+    deleteProject
 } from './projects';
 
 export {
     getIssues,
     getIssue,
     addIssue,
-    updateIssue
+    updateIssue,
+    deleteIssue
 } from './issues';
 
 export {

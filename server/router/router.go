@@ -29,12 +29,14 @@ func NewRouter() *mux.Router {
 	router.HandleFunc("/projects/add/{email}", projects.AddProject).Methods("POST", "OPTIONS")
 	router.HandleFunc("/projects/getAll/{email}", projects.GetProjects).Methods("GET", "OPTIONS")
 	router.HandleFunc("/projects/get/{projectID}/{userEmail}", projects.GetProject).Methods("GET", "OPTIONS")
+	router.HandleFunc("/projects/delete/{projectID}/{email}", projects.DeleteProject).Methods("DELETE", "OPTIONS")
 
 	// Issue apis
 	router.HandleFunc("/issues/add", issues.CreateIssue).Methods("POST", "OPTIONS")
 	router.HandleFunc("/issues/update", issues.UpdateIssue).Methods("POST", "OPTIONS")
 	router.HandleFunc("/issues/getAll/{projectID}", issues.GetIssues).Methods("GET", "OPTIONS")
 	router.HandleFunc("/issues/get/{projectID}/{issueID}", issues.GetIssue).Methods("GET", "OPTIONS")
+	router.HandleFunc("/issues/delete/{issueID}/{projectID}", issues.DeleteIssue).Methods("DELETE", "OPTIONS")
 
 	// Team apis
 	router.HandleFunc("/teams/add", teams.CreateTeam).Methods("POST", "OPTIONS")

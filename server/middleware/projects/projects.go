@@ -157,6 +157,57 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(project)
 }
 
+// DeleteProject deletes a project
+func DeleteProject(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	log.Println("Deleting Project")
+
+	log.Println("Request Method: ", r.Method)
+	// Handle preflight request
+	if r.Method != "DELETE" {
+		return
+	}
+
+	// Delete the project
+	type deleteResponse struct {
+		ProjectID string
+		Email     string
+	}
+
+	projectID := mux.Vars(r)["projectID"]
+	userEmail := mux.Vars(r)["email"]
+	responseObject := deleteResponse{
+		ProjectID: projectID,
+		Email:     userEmail,
+	}
+	log.Println("Delete Request: ", responseObject)
+
+	deleteProjectInput := &dynamodb.DeleteItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"ProjectID": {
+				S: aws.String(projectID),
+			},
+			"Email": {
+				S: aws.String(userEmail),
+			},
+		},
+		TableName: aws.String(tableName),
+	}
+	_, err := dbClient.DeleteItem(deleteProjectInput)
+	if err != nil {
+		msg := "Could not call DeleteItem on project"
+		log.Println(msg)
+		log.Println(err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(responseObject)
+}
+
 func addSelfToTeam(team interface{}) error {
 	tv, err := dynamodbattribute.MarshalMap(team)
 	if err != nil {

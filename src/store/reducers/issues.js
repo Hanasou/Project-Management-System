@@ -52,12 +52,29 @@ const updateIssueSuccess = (state, action) => {
     })
 }
 
+const deleteIssueSuccess = (state, action) => {
+    const defaultIssue = {
+        IssueID: "",
+        Title: "",
+        Description: "",
+        Type: "",
+        Status: "",
+        Priority: ""
+    }
+    const filterIssue = state.issues.filter(issue => issue.IssueID !== action.deleteRequest.IssueID)
+    return updateObject(state, {
+        issue: defaultIssue,
+        issues: filterIssue
+    })
+}
+
 const reducer = (state = initialState, action) => {
     switch (action.type) {
         case actionTypes.GET_ISSUES_SUCCESS: return getIssuesSuccess(state, action);
         case actionTypes.GET_ISSUE_SUCCESS: return getIssueSuccess(state, action);
         case actionTypes.ADD_ISSUE_SUCCESS: return addIssueSuccess(state, action);
         case actionTypes.UPDATE_ISSUE_SUCCESS: return updateIssueSuccess(state, action);
+        case actionTypes.DELETE_ISSUE_SUCCESS: return deleteIssueSuccess(state, action);
         default:
             return state;
     }

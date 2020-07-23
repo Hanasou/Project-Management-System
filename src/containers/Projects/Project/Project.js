@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import { connect } from 'react-redux';
 
 import Wrapper from '../../../hoc/Wrapper';
+import Button from '../../../components/UI/Button/Button';
 import Issues from '../../../components/Issues/Issues';
 import Issue from '../../../components/Issues/Issue/Issue';
 import * as actions from '../../../store/actions/index';
@@ -27,6 +28,15 @@ class Project extends Component {
         this.setState({show: false})
     }
 
+    handleDelete = (event) => {
+        event.preventDefault();
+        const deleteRequest = {
+            ProjectID: this.props.project.ProjectID,
+            Email: this.props.email
+        };
+        this.props.onDeleteProject(this.props.token, deleteRequest);
+    }
+
     
     render() {
         let issue = null;
@@ -35,9 +45,16 @@ class Project extends Component {
         }
         return (
             <Wrapper>
-                <h1>
-                    {this.props.project.Title}
-                </h1>
+                <div>
+                    <h1>
+                        {this.props.project.Title}
+                    </h1>
+                    <Button
+                        btnType="danger"
+                        clicked={this.handleDelete}>
+                        Leave Project
+                    </Button>
+                </div>
                 <Issues 
                     issues={this.props.issues}/> 
                 {issue}
@@ -60,7 +77,8 @@ const mapDispatchToProps = dispatch => {
     return {
         onGetProject: (token, projectID, email) => dispatch(actions.getProject(token, projectID, email)),
         onGetIssues: (token, projectID) => dispatch(actions.getIssues(token, projectID)),
-        onGetIssue: (token, projectID, issueID) => dispatch(actions.getIssue(token, projectID, issueID))
+        onGetIssue: (token, projectID, issueID) => dispatch(actions.getIssue(token, projectID, issueID)),
+        onDeleteProject: (token, deleteRequest) => dispatch(actions.deleteProject(token, deleteRequest))
     }
 }
 

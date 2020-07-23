@@ -93,3 +93,37 @@ export const addProject = ( token, email, title, description) => {
             })
     }
 }
+
+export const deleteProjectSuccess = ( deleteRequest ) => {
+    return {
+        type: actionTypes.DELETE_PROJECT_SUCCESS,
+        deleteRequest: deleteRequest
+    }
+}
+
+export const deleteProjectFail = ( error ) => {
+    return {
+        type: actionTypes.DELETE_ISSUE_FAIL,
+        error: error
+    }
+}
+
+export const deleteProject = (token, deleteRequest) => {
+    return dispatch => {
+        const headers = {
+            'Authorization': token
+        };
+        console.log(deleteRequest);
+        const projectID = deleteRequest.ProjectID;
+        const email = deleteRequest.Email;
+        axios.delete('/projects/delete/' + projectID + '/' + email, {headers})
+            .then(response => {
+                console.log("Delete Request: ", response.data);
+                dispatch(deleteProjectSuccess(response.data));
+            })
+            .catch(error => {
+                console.log("Delete Request Error: ", error);
+                dispatch(deleteProjectFail(error));
+            })
+    }
+}

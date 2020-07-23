@@ -14,7 +14,7 @@ import (
 	"github.com/projmanserver/models"
 )
 
-const tableName = "Teams"
+const tableName = "Projects"
 
 // Initialize a session that the SDK will use to load
 // credentials from the shared credentials file ~/.aws/credentials
@@ -92,30 +92,6 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, msg, http.StatusBadRequest)
 			return
 		}
-
-		teamMember := struct {
-			ProjectID   string
-			Member      string
-			Project     string
-			ProjectDesc string
-		}{
-			ProjectID:   reqObject.ProjectID,
-			Member:      mem,
-			Project:     reqObject.ProjectName,
-			ProjectDesc: reqObject.ProjectDesc,
-		}
-		tav, err := dynamodbattribute.MarshalMap(teamMember)
-		if err != nil {
-			msg := "Could not marshal into attribute value"
-			log.Println(msg)
-			http.Error(w, msg, http.StatusBadRequest)
-			return
-		}
-		input := &dynamodb.PutItemInput{
-			Item:      tav,
-			TableName: aws.String(tableName),
-		}
-		dbClient.PutItem(input)
 	}
 
 	json.NewEncoder(w).Encode(reqObject)
@@ -132,13 +108,13 @@ func GetTeams(w http.ResponseWriter, r *http.Request) {
 
 	// Member that is getting queried is inside path parameter
 	memberEmail := mux.Vars(r)["memberEmail"]
-	indexName := "Member-index"
+	indexName := "Email-index"
 	queryInput := &dynamodb.QueryInput{
 		TableName:              aws.String(tableName),
 		IndexName:              aws.String(indexName),
 		KeyConditionExpression: aws.String("#mEmail = :mEmail"),
 		ExpressionAttributeNames: map[string]*string{
-			"#mEmail": aws.String("Member"),
+			"#mEmail": aws.String("Email"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":mEmail": {
@@ -150,9 +126,9 @@ func GetTeams(w http.ResponseWriter, r *http.Request) {
 	queryResult, _ := dbClient.Query(queryInput)
 	type dbTeam struct {
 		ProjectID   string
-		Member      string
-		Project     string
-		ProjectDesc string
+		Email       string
+		Title       string
+		Description string
 	}
 	dbTeams := []dbTeam{}
 	outputTeams := []models.Team{}
@@ -162,7 +138,7 @@ func GetTeams(w http.ResponseWriter, r *http.Request) {
 	for _, t := range dbTeams {
 		outputTeam := models.Team{}
 		pid := t.ProjectID
-		pDesc := t.ProjectDesc
+		pDesc := t.Description
 		queryInput := &dynamodb.QueryInput{
 			TableName:              aws.String(tableName),
 			KeyConditionExpression: aws.String("#pid = :pid"),
@@ -179,10 +155,10 @@ func GetTeams(w http.ResponseWriter, r *http.Request) {
 		currTeams := []dbTeam{}
 		dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &currTeams)
 		outputTeam.ProjectID = pid
-		outputTeam.Project = currTeams[0].Project
+		outputTeam.Project = currTeams[0].Title
 		outputTeam.ProjectDesc = pDesc
 		for _, team := range currTeams {
-			outputTeam.Members = append(outputTeam.Members, team.Member)
+			outputTeam.Members = append(outputTeam.Members, team.Email)
 		}
 		outputTeams = append(outputTeams, outputTeam)
 	}
@@ -199,6 +175,7 @@ func GetTeam(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 	projectID := mux.Vars(r)["projectID"]
+	log.Println("Getting a team")
 	queryInput := &dynamodb.QueryInput{
 		TableName:              aws.String(tableName),
 		KeyConditionExpression: aws.String("#pid = :pid"),
@@ -214,8 +191,8 @@ func GetTeam(w http.ResponseWriter, r *http.Request) {
 	queryResult, _ := dbClient.Query(queryInput)
 	type dbTeam struct {
 		ProjectID string
-		Member    string
-		Project   string
+		Email     string
+		Title     string
 	}
 	teams := []dbTeam{}
 	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &teams)
@@ -224,11 +201,11 @@ func GetTeam(w http.ResponseWriter, r *http.Request) {
 	respTeam := models.Team{
 		ProjectID: projectID,
 		Members:   []string{},
-		Project:   teams[0].Project,
+		Project:   teams[0].Title,
 	}
 
 	for _, t := range teams {
-		respTeam.Members = append(respTeam.Members, t.Member)
+		respTeam.Members = append(respTeam.Members, t.Email)
 	}
 
 	json.NewEncoder(w).Encode(respTeam)

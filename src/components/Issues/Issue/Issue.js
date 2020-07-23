@@ -103,6 +103,16 @@ class Issue extends Component {
         this.props.onUpdateIssue(token, updateIssueData);
     }
 
+    handleDelete = (event) => {
+        event.preventDefault();
+        const deleteIssueRequest = {
+            IssueID: this.props.issue.IssueID,
+            ProjectID: this.props.issue.ProjectID
+        };
+        console.log(deleteIssueRequest);
+        this.props.onDeleteIssue(this.props.token, deleteIssueRequest);
+    }
+
     render() {
         const statusItems = ['To Do', 'In Progress', 'Finished']
         const prioItems = ['Low', 'Medium', 'High']
@@ -180,6 +190,12 @@ class Issue extends Component {
                         title={this.state.dropdowns.prioTitle}
                         items={prioItems}
                         onItemClick={(event) => this.onDropdownItemClick(event, "prioTitle")}/>
+                    <br/>
+                    <Button
+                        btnType="danger"
+                        clicked={this.handleDelete}>
+                            Delete Issue
+                    </Button>
                 </div>
             </Wrapper>
         )
@@ -189,13 +205,15 @@ class Issue extends Component {
 const mapStateToProps = state => {
     return {
         token: state.auth.token,
-        issue: state.issues.issue
+        issue: state.issues.issue,
+        comments: state.comments.comments
     };
 };
 
 const mapDispatchToProps = dispatch => {
     return {
-        onUpdateIssue: (token, updateData) => dispatch(actions.updateIssue(token, updateData))
+        onUpdateIssue: (token, updateData) => dispatch(actions.updateIssue(token, updateData)),
+        onDeleteIssue: (token, deleteRequest) => dispatch(actions.deleteIssue(token, deleteRequest))
     }
 }
 
