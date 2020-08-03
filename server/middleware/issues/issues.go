@@ -81,19 +81,65 @@ func CreateIssue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(issue)
 }
 
+// GetIssuesByUser gets issues for a user
+func GetIssuesByUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	log.Println("Getting issues by user")
+
+	// Get user email from path parameter
+	userEmail := mux.Vars(r)["userEmail"]
+	log.Println("User: ", userEmail)
+
+	// Query for items that match this userEmail
+	indexName := "Creator-index"
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String(tableName),
+		IndexName:              aws.String(indexName),
+		KeyConditionExpression: aws.String("#em = :email"),
+		ExpressionAttributeNames: map[string]*string{
+			"#em": aws.String("Creator"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":email": {
+				S: aws.String(userEmail),
+			},
+		},
+	}
+
+	// Run query
+	queryResult, err := dbClient.Query(queryInput)
+	if err != nil {
+		msg := "Could not get issues"
+		log.Println(msg)
+		log.Println(err.Error())
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	// Unmarshal items into slice of issues
+	issues := []models.Issue{}
+	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &issues)
+
+	// Return items to client
+	json.NewEncoder(w).Encode(issues)
+}
+
 // GetIssues gets all the issues for a particular project
 func GetIssues(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-	log.Println("Getting issues")
+	log.Println("Getting issues by project")
 
 	// Get projectID from path parameter
 	projectID := mux.Vars(r)["projectID"]
 	log.Println(projectID)
 
-	// Query for items that match this userEmail
+	// Query for items that match this Project ID
 	indexName := "ProjectID-index"
 	queryInput := &dynamodb.QueryInput{
 		TableName:              aws.String(tableName),
@@ -110,7 +156,14 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println(queryInput.ExpressionAttributeValues)
-	queryResult, _ := dbClient.Query(queryInput)
+	queryResult, err := dbClient.Query(queryInput)
+	if err != nil {
+		msg := "Could not get issues"
+		log.Println(msg)
+		log.Println(err.Error())
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
 	issues := []models.Issue{}
 
 	dynamodbattribute.UnmarshalListOfMaps(queryResult.Items, &issues)

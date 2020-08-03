@@ -6,6 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import Wrapper from './hoc/Wrapper';
 import Signup from './containers/Auth/Signup';
+import HomeIssues from './components/Issues/HomeIssues';
 import CustomNavbar from './containers/Navbar/Navbar';
 import Projects from './containers/Projects/Projects';
 import Project from './containers/Projects/Project/Project';
@@ -42,6 +43,9 @@ class App extends Component {
       content = (
         <Wrapper>
           <CustomNavbar />
+          <br/>
+          <h5>Current Issues</h5>
+          <HomeIssues />
           { routes }
         </Wrapper>
       );

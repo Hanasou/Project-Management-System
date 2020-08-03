@@ -38,6 +38,29 @@ export const getIssues = (token, projectID) => {
     }
 }
 
+export const getIssuesByUser = (token, userEmail) => {
+    return dispatch => {
+        const headers = {
+            'Authorization': token
+        };
+        axios.get('/issues/getByUser/'+userEmail, {headers})
+            .then(response => {
+                console.log(response.data);
+                const fetchedIssues = [];
+                for (let key in response.data) {
+                    fetchedIssues.push({
+                        ...response.data[key],
+                        Id: key
+                    });
+                }
+                dispatch(getIssuesSuccess(fetchedIssues));
+            })
+            .catch(error => {
+                dispatch(getIssuesFail(error));
+            })
+    }
+}
+
 export const getIssueSuccess = (issue) => {
     return {
         type: actionTypes.GET_ISSUE_SUCCESS,

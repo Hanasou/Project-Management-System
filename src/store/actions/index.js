@@ -15,6 +15,7 @@ export {
 
 export {
     getIssues,
+    getIssuesByUser,
     getIssue,
     addIssue,
     updateIssue,
